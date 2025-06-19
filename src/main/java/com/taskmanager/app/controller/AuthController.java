@@ -18,12 +18,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.AuthenticationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/auth")
 @CrossOrigin(origins = "http://localhost:4200") // Adjust this for your frontend URL
 public class AuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
     private final UserRepository userRepository;
@@ -41,26 +44,31 @@ public class AuthController {
 
     @PostMapping("/register")
     public String register(@RequestBody UserRegistrationRequest request) {
-        userService.registerUser(request.getUsername(), request.getPassword());
+        logger.info("Registering new user: email={}, username={}", request.getEmail(), request.getUsername());
+        userService.registerUser(request.getEmail(), request.getUsername(), request.getPassword());
         return "User registered successfully";
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+                        logger.info("Login successful for email: {}", request.getEmail());
 
-            User user = userRepository.findByUsername(request.getUsername())
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
+             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            String token = jwtTokenUtil.generateToken(user.getUsername());
+            String token = jwtTokenUtil.generateToken(user.getEmail());
+            logger.info("Login successful for email: {}", request.getEmail());
             return ResponseEntity.ok(new LoginResponse(token));
 
-        } catch (AuthenticationException ex) {
-            // Mauvais username ou password
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nom d'utilisateur ou mot de passe incorrect");
-        }
+        }  catch (AuthenticationException ex) {
+    String message = ex.getMessage(); 
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body("Échec de l'authentification: " + message);
+}
     }
 
     //  handle RuntimeException
