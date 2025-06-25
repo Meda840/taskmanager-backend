@@ -3,6 +3,8 @@ package com.taskmanager.app.security;
 import com.taskmanager.app.service.CustomUserDetailsService;
 import com.taskmanager.app.util.JwtAuthenticationFilter;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -52,7 +54,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())  // Disable CSRF completely
+        .cors(cors -> cors
+            .configurationSource(request -> {
+                var config = new org.springframework.web.cors.CorsConfiguration();
+                config.setAllowedOrigins(List.of("http://localhost:4200"));
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                config.setAllowedHeaders(List.of("*"));
+                config.setExposedHeaders(List.of("Authorization"));
+                config.setAllowCredentials(true);
+                return config;
+            })
+        )
+            .csrf(csrf -> csrf.disable())  // Disable CSRF completely because using JWT
             .headers(headers -> headers
                 // Allow H2 console to be loaded in frames from same origin
                 .frameOptions(frame -> frame.sameOrigin())

@@ -43,17 +43,22 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String register(@RequestBody UserRegistrationRequest request) {
+    public ResponseEntity<Map<String,Object>> register(@RequestBody UserRegistrationRequest request) {
         logger.info("Registering new user: email={}, username={}", request.getEmail(), request.getUsername());
-        userService.registerUser(request.getEmail(), request.getUsername(), request.getPassword());
-        return "User registered successfully";
+       User user = userService.registerUser(request.getEmail(), request.getUsername(), request.getPassword());
+        Map<String, Object> response = new HashMap<>();
+        String token = jwtTokenUtil.generateToken(user.getEmail());
+        user.setPassword(null);
+        response.put("success", true);
+        response.put("user", user);
+        response.put("token", token);
+        return ResponseEntity.ok(response);
+        
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-                        logger.info("Login successful for email: {}", request.getEmail());
-
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
@@ -61,8 +66,12 @@ public class AuthController {
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             String token = jwtTokenUtil.generateToken(user.getEmail());
-            logger.info("Login successful for email: {}", request.getEmail());
-            return ResponseEntity.ok(new LoginResponse(token));
+            Map<String, Object> response = new HashMap<>();
+            user.setPassword(null);
+            response.put("success", true);
+            response.put("user", user);
+            response.put("token", token);
+            return ResponseEntity.ok((response));
 
         }  catch (AuthenticationException ex) {
     String message = ex.getMessage(); 

@@ -14,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/tasks")
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class TaskController {
 
     private final TaskService taskService;
@@ -41,8 +42,7 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id,
-                                                   @RequestBody TaskRequest request) {
+    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id,@RequestBody TaskRequest request) {
         TaskResponse response = taskService.updateTask(id, request);
         return ResponseEntity.ok(response);
     }

@@ -45,13 +45,6 @@ public class TaskService {
         task.setDescription(request.getDescription());
         task.setCompleted(request.isCompleted());
 
-        // Optionally update user association
-        if (request.getUserId() != null) {
-            User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            task.setUser(user);
-        }
-
         task = taskRepository.save(task);
         return mapToResponse(task);
     }
